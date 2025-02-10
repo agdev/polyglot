@@ -1,0 +1,32 @@
+user should be able to :
+text to chat 
+or 
+record to chat when asking for translation
+
+chat should respond with translation in text and audio with desired language
+
+====================
+Steps:
+1. user records to chat - using st.audio
+2. Whisper transcribes audio
+3. LLM checks for intention, is it a normal chat or translation request
+4
+    4.a Translation
+        1. LLM translates
+        2. convert to audio with coqui model
+        3. breaks down sentence into words for later study/review
+   4.b Regular chat
+
+System should keep 
+Plus.
+System should save words from user's text into separate dictionary/list that it can practice later
+
+user writes/prompts to chat
+
+chat responds
+
+Whisper model Speech to Text => from recording to text
+Cori TTS model from text to speech
+
+===================
+
