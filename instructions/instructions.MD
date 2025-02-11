@@ -65,21 +65,21 @@ streamlit_app/
 1. User records audio in Streamlit.
 2. Whisper transcribes audio to text.
 3. The system checks for intent (chat or translation request).The system checks for intent (chat or translation request).
-   ## If translation:
+   If translation:
    - The system detects the language to translate text to.
    - Translate text via LLM (LangChain's ChatGoogleGenerativeAI - Gemini-2.0-Flash).
    - Convert translated text to speech using Coqui.
    - Store phrases/words categorized by language for learning.
-4. If chat:
+  If chat:
    - Generate a response using LLM (LangChain's ChatGoogleGenerativeAI - Gemini-2.0-Flash).
    - Display text response.
 
 #### **3.2 Text Input Flow**
 
 1. User enters text manually.
-2. System detects the language of the input text.
 3. System determines intent (chat or translation).
 4. If translation:
+   - The system detects the language to translate text to.
    - LLM translates text (LangChain's ChatGoogleGenerativeAI - Gemini-2.0-Flash).
    - Display translated text.
    - Convert to speech via Coqui.
@@ -120,6 +120,11 @@ streamlit_app/
 
   - Example: `examples/coqui-app.py`
 
+- **Langgraph**
+  - [How to add cross-thread persistence to your graph](https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/)
+  - [How to add cross-thread persistence to your graph](https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/)
+
+
 - **LLM Processing:**
 
   - [LangChain's ChatGoogleGenerativeAI Documentation](https://docs.litellm.ai/docs/)
@@ -128,7 +133,6 @@ streamlit_app/
 
 ## Developer Notes
 
-- Ensure **low latency** in voice-to-text and text-to-voice conversion.
 - Implement **error handling** for API failures in Whisper, Coqui, and LLM processing.
 - Use **LangGraph** to maintain conversation context and manage workflow dependencies.
 - **Persist user dictionary** (words/phrases) categorized by language for personalized learning.
