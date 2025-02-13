@@ -1,11 +1,14 @@
-from typing import Annotated
+from typing import Annotated, Dict, Any, Callable
 from langgraph.graph import StateGraph, END
-from langchain_google_genai import ChatGoogleGenerativeAI
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
-from .state import PolyglotState
+from .state import PolyglotState, Translation, TranslationOptions
+from langchain_core.runnables.config import RunnableConfig
+from .configSchema import ConfigSchema
+from .chains import create_detect_intent_chain, Intent, create_translate_chain, TranslationResponse, create_chat_response_chain
+from stt_tts.models import TTSModel
 # Load environment variables
-load_dotenv()
+# load_dotenv()
 
  # Define nodes (placeholder implementations)
     
@@ -14,108 +17,166 @@ load_dotenv()
 #     if state["input_type"] == "audio":
 #         state["transcription"] = state["input"]  # Placeholder
 #     return state
+def create_detect_intent_node(llm)-> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
+    detect_intent_chain = create_detect_intent_chain(llm)    
+    def detect_intent(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+        print(f"detect_intent")
+        print(f"input: {state['input']}")
+        try:
+            # Get intent from LLM
+            intent: Intent = detect_intent_chain.invoke({"input": state["input"]})                        
+            result = intent.Intent
+            # Validate intent
+            if intent.Intent not in ["translation", "chat"]:
+                # Default to chat if response is invalid
+                result = "chat"                                                                
+        except Exception as e:
+            # Log the error (you might want to add proper logging)
+            print(f"Error in intent detection: {str(e)}")
+            # Default to chat on error
+            result = "chat"
 
-def detect_intent(state: PolyglotState) -> Annotated[PolyglotState, str]:
-    # Initialize ChatGoogleGenerativeAI
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        temperature=0,  # We want deterministic responses for intent detection
-    )
+        print(f"intent: {result}")
+        return {"intent": result}            
+    return detect_intent
+
     
-    # Get the input text
-    text = state["transcription"] if state["input_type"] == "audio" else state["input"]
+
+# def create_extract_sentence(llm):
+#     def extract_sentence_for_translation(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+#         """Extract sentences for translation using LLM."""
+#         text = state["transcription"] if state["input_type"] == "audio" else state["input"]
+        
+#         messages = [
+#             ("system", """Extract the sentence to be translated. Remove any extra context like 'translate this:' 
+#             or 'how do you say'. Just return the core sentence to translate."""),
+#             ("human", text)
+#         ]
+        
+#         response = llm.invoke(messages)
+#         state["sentence_to_translate"] = response.content.strip()
+#         return state
     
-    # Create system message and user message
-    messages = [
-        (
-            "system",
-            """You are a helpful assistant that determines if a user's message is a request for translation or a general chat message.
-            If the user is asking for translation (either explicitly or implicitly), respond with exactly 'translation'.
-            If the user is having a general conversation or asking questions, respond with exactly 'chat'.
-            Only respond with one of these two words: 'translation' or 'chat'.
+#     return extract_sentence_for_translation
+
+def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
+    translate_chain = create_translate_chain(llm)
+    def translate_text(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+        """Translate text and provide multiple options."""
+        print(f"translate_text")
+        print(f"input: {state['input']}")
+        try:
+            response:TranslationResponse = translate_chain.invoke({"user_request": state["input"]})
+            print(f"response: {response}")
+            translation = Translation()
+            translation["language"] = response.target_language
+            for option in response.translations:
+                translation_option = TranslationOptions()
+                translation_option["translation"] = option.translation
+                translation_option["description"] = option.description
+                translation["options"].append(translation_option)
+            return {"translation": translation}
+        except Exception as e:
+            print(f"Error in translate_text: {str(e)}")
+            return state
+    
+    return translate_text
+
+# def create_sentence_breakdown(llm):
+#     def break_down_sentence(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+#         """Break down translated sentence into words and store in state."""
+#         if not state.get("translation"):
+#             return state
             
-            Examples:
-            - "Translate 'hello' to Spanish" -> 'translation'
-            - "How do you say 'hello' in Spanish" -> 'translation'
-            - "What's the weather like?" -> 'chat'
-            - "Can you help me learn Spanish?" -> 'chat'
-            """
-        ),
-        ("human", text)
-    ]
+#         messages = [
+#             ("system", """Break down this translation into individual words and provide explanations.
+#             Format as a list of word objects with 'word' and 'explanation' fields."""),
+#             ("human", state["translation"]["options"][0]["translation"])
+#         ]
+        
+#         response = llm.invoke(messages)
+#         state["word_breakdown"] = response.content  # You'll want to parse this properly
+#         return state
     
-    try:
-        # Get intent from LLM
-        ai_msg = llm.invoke(messages)
-        intent = ai_msg.content.strip().lower()
-        
-        # Validate intent
-        if intent not in ["translation", "chat"]:
-            # Default to chat if response is invalid
-            intent = "chat"
-        
-        state["intent"] = intent
-        return state, intent
-        
-    except Exception as e:
-        # Log the error (you might want to add proper logging)
-        print(f"Error in intent detection: {str(e)}")
-        # Default to chat on error
-        state["intent"] = "chat"
-        return state, "chat"
+#     return break_down_sentence
 
-def translate(state: PolyglotState) -> PolyglotState:
-    # TODO: Implement translation using Gemini
-    text = state["transcription"] if state["input_type"] == "audio" else state["input"]
-    text = text.replace("translate:", "").strip()
-    state["translation"] = f"Translation placeholder: {text}"
-    return state
+def create_tts_node(tts_model:TTSModel) -> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
+    """Convert translations to speech."""
+    def text_to_speech(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+        print(f"text_to_speech")
+        print(f"translation: {state['translation']}")
+        if not state.get("translation"):
+            return state
+            
+        translations = state["translation"]["options"]
+        audio_files = []
+        
+        for option in translations:
+            audio_path = tts_model.tts_to_file(option["translation"])
+            audio_files.append(audio_path)
 
-def chat_response(state: PolyglotState) -> PolyglotState:
-    # TODO: Implement chat using Gemini
-    text = state["transcription"] if state["input_type"] == "audio" else state["input"]
-    state["response"] = f"Chat response placeholder: {text}"
-    return state
-
-def synthesize_speech(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
-    # TODO: Implement Coqui TTS
-    # Access the config through the configurable key
-    tts_model    = config["configurable"].get("tts_model", None)
-    state["audio_response"] = tts_model.tts_to_file(state["translation"])
-    # state["audio_response"] = tts_model.tts_to_file(state["response"])
-    state["audio_response"] = b""  # Placeholder
-    return state
+        print(f"audio_files: {audio_files}")
+        return {"audio_response_files": audio_files}
     
+    return text_to_speech
 
-def create_workflow() -> StateGraph:
+def create_chat_response_node(llm)-> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
+    chat_response_chain = create_chat_response_chain(llm)
+    def chat_response(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+        """Generate a chat response using LLM."""
+        response = chat_response_chain.invoke({"chat_history": state["chat_history"], "input": state["input"]})
+        return {"chat_resp": response}
+    return chat_response
+
+def where_to_go(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+    """Determine where to go based on intent."""
+    if state["intent"] == "translation":
+        return "translate"
+    else:
+        return "chat_response"
+
+def create_workflow(llm, tts_model:TTSModel) -> StateGraph:
+    """Create the workflow graph with dependencies injected."""
+    
     # Initialize workflow graph
     workflow = StateGraph(PolyglotState)
     
-   
+    # Create nodes with dependencies
+    detect_intent_node = create_detect_intent_node(llm)
+    # extract_sentence_node = create_extract_sentence(llm)
+    translate_node = create_translate_node(llm)
+    # breakdown_node = create_sentence_breakdown(llm)
+    tts_node = create_tts_node(tts_model=tts_model)
+    chat_response_node = create_chat_response_node(llm)
     # Add nodes to graph
-    # workflow.add_node("transcribe", transcribe)
-    workflow.add_node("detect_intent", detect_intent)
-    workflow.add_node("translate", translate)
-    workflow.add_node("chat_response", chat_response)
-    workflow.add_node("synthesize_speech", synthesize_speech)
+    workflow.add_node("detect_intent", detect_intent_node)
+    workflow.add_node("chat_response", chat_response_node)
+    # workflow.add_node("extract_sentence", extract_sentence_node)
+    workflow.add_node("translate", translate_node)
+    # workflow.add_node("break_down_sentence", breakdown_node)
+    workflow.add_node("text_to_speech", tts_node)
     
-    # Define edges
-    workflow.add_edge("transcribe", "detect_intent")
+    # Define edges based on flow chart
     workflow.add_conditional_edges(
         "detect_intent",
+        where_to_go,
         {
-            "translation": "translate",
-            "chat": "chat_response",
+            "translate": "translate",
+            "chat_response": "chat_response",
         }
     )
-    workflow.add_edge("translate", "synthesize_speech")
-    workflow.add_edge("synthesize_speech", END)
+    
+    # Translation flow
+    workflow.add_edge("translate", "text_to_speech")
+    # workflow.add_edge("extract_sentence", "translate")
+    # workflow.add_edge("translate", "break_down_sentence")
+    # workflow.add_edge("break_down_sentence", "text_to_speech")
+    workflow.add_edge("text_to_speech", END)
+    
+    # Chat flow
     workflow.add_edge("chat_response", END)
     
     # Set entry point
-    workflow.set_entry_point("transcribe")
+    workflow.set_entry_point("detect_intent")
     
     return workflow
-
-# Create singleton instance
-workflow = create_workflow()

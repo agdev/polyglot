@@ -10,8 +10,14 @@ torch = "*"
 torchaudio = "*"
 tts = "*"
 python-dotenv = "*"
+langgraph = "*"
+langchain-google-genai = "*"
+langchain = "*"
+langchain-core = "*"
+pydantic = "*"
+sox = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.11"

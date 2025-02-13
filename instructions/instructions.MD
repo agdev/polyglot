@@ -122,12 +122,11 @@ streamlit_app/
 
 - **Langgraph**
   - [How to add cross-thread persistence to your graph](https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/)
-  - [How to add cross-thread persistence to your graph](https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/)
 
 
 - **LLM Processing:**
 
-  - [LangChain's ChatGoogleGenerativeAI Documentation](https://docs.litellm.ai/docs/)
+  - [LiteLLM's Documentation](https://docs.litellm.ai/docs/)
 
 ---
 

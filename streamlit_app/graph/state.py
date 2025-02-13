@@ -1,5 +1,5 @@
-from ast import List
-from typing import Dict, TypedDict, Annotated
+from typing import Literal, TypedDict, Annotated, Optional
+from operator import add
 
 class TranslationOptions(TypedDict):
     description: str
@@ -7,15 +7,16 @@ class TranslationOptions(TypedDict):
 
 class Translation(TypedDict):
     language: str
-    options: List[TranslationOptions]
-# Define state schema
+    options: Annotated[list[TranslationOptions], add]
+
 class PolyglotState(TypedDict):
     input: str
-    # input_type: str  # "text" or "audio"
-    intent: str  # "chat" or "translation"
-    # transcription: str
+    # input_type: Literal["text", "audio"]
+    intent: Literal["chat", "translation"]
+    # transcription: Optional[str]
     translation: Translation
-    response: str
-    audio_response_file: str
+    chat_resp: str
+    chat_history: Annotated[list[str], add]
+    audio_response_file: Annotated[list[str], add]
 
 # class PolyglotStateInternal(TypedDict):
