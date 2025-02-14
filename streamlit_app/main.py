@@ -35,6 +35,7 @@ if "llm" not in st.session_state:
     st.session_state.llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
         temperature=0.7,
+        api_key=config["GOOGLE_API_KEY"]
     )    
 
 def initialize_app():

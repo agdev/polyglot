@@ -1,8 +1,10 @@
 from langchain_core.runnables.config import RunnableConfig
 from pydantic import BaseModel, Field
 from langchain.prompts import PromptTemplate
-from typing import List, Optional
-from langchain_core.output_parsers import StrOutputParser
+from typing import List, Optional, Any
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from langchain_core.runnables import RunnableLambda
+from functools import partial
 # Models for structured outputs
 class Intent(BaseModel):
     Intent: str = Field(description="The intent of the user's message")
@@ -22,12 +24,14 @@ def create_detect_intent_chain(llm):
 
         User: {input}    
         """
+        # output_parser=JsonOutputParser()
     )
 
     
-    llm_structured = llm.with_structured_output(Intent)
-    return prompt_template | llm_structured
-
+    # llm_structured = llm.with_structured_output(Intent)
+    # return prompt_template | llm_structured
+    return prompt_template | llm | StrOutputParser()
+    # return prompt_template | llm | JsonOutputParser(pydantic_object=Intent)
 # class ExtractedSentence(BaseModel):
 #     sentence: str = Field(description="The cleaned sentence to be translated")
 #     source_language: str = Field(description="Detected source language")
@@ -69,6 +73,14 @@ class TranslationResponse(BaseModel):
     target_language: str = Field(description="Target language")
     options: List[TranslationOption] = Field(description="List of translation options")
 
+# def parse_translation_response(result) -> TranslationResponse:
+#     parser = JsonOutputParser(pydantic_object=TranslationResponse)
+#     return parser.parse(result)
+
+def parse_to_model(result, model: BaseModel) -> Any:
+    parser = JsonOutputParser(pydantic_object=model)
+    return parser.parse(result)
+
 def create_translate_chain(llm):
     # prompt_template = PromptTemplate.from_template(
     #     """Translate the following text from {source_language} to {target_language}.
@@ -97,22 +109,18 @@ def create_translate_chain(llm):
             1. The translated text
             2. A description of when to use this variant
             
-        Respond in JSON format
-        Example of JSON response:
-        response:{
-        "target_language": "here goes the target language",
-        "translations":[
-                {
-                    "translation": "Here goes the translation",
-                    "description": "Here goes the description/explanation of the translation",
-                }          
-            ]
-        }
-        """
+        Respond in JSON format.
+        Example response:
+        {json_format}
+        """,
+        partial_variables={"json_format": JsonOutputParser(pydantic_object=TranslationResponse).get_format_instructions()}
     )
    
-    llm_structured = llm.with_structured_output(TranslationResponse)
-    return prompt_template | llm_structured
+   ##NOTE: using llm.with_structured_output with Free tier google api key does not work
+    # llm_structured = llm.with_structured_output(TranslationResponse)
+    # return prompt_template | llm_structured
+    return prompt_template | llm | StrOutputParser() | RunnableLambda(partial(parse_to_model, model=TranslationResponse))
+# | JsonOutputParser(pydantic_object=TranslationResponse)
 
 # class WordBreakdown(BaseModel):
 #     word: str = Field(description="Individual word")
@@ -170,17 +178,32 @@ def create_chat_response_chain(llm):
 
 if __name__ == "__main__":
     from langchain_google_genai import ChatGoogleGenerativeAI
-    from ..config import load_config
-
+    from dotenv import load_dotenv
+    import os
     
-    def test_detect_intent_chain():
-        config = load_config()
-        llm = ChatGoogleGenerativeAI(
+    env_path = os.path.join( os.getcwd(), "streamlit_app", "env", ".env")
+    load_dotenv(env_path)
+    api_key = os.getenv("GOOGLE_API_KEY")
+    llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
             temperature=0.7,
-        )    
+            api_key=api_key
+    )
+    
+    def test_translate_chain():        
+        translate_chain = create_translate_chain(llm)
+        result = translate_chain.invoke({"user_request": "Translate 'hello' to Spanish"})
+        print(f"result: {result}")
+        # parser = JsonOutputParser(pydantic_object=TranslationResponse)
+        # translation = parser.parse(result)
+        # print(f"translation: {translation}")
+
+    def test_detect_intent_chain():
+        # config = load_config()
         detect_intent_chain = create_detect_intent_chain(llm)
         result = detect_intent_chain.invoke({"input": "Translate 'hello' to Spanish"})
         print(f"result: {result}")
 
-    test_detect_intent_chain()
+    test_translate_chain()
+    # test_detect_intent_chain()
+    # {'target_language': 'Spanish', 'options': [{'translation': 'Hola', 'description': "This is the most common and general translation of 'hello'. Use it in most situations."}, {'translation': 'Aló', 'description': "This translation is used in some Latin American countries, especially when answering the phone. It's similar to saying 'hello' on the phone in English."}, {'translation': 'Qué tal', 'description': "This translates more closely to 'What's up?' or 'How's it going?', but can be used as an informal greeting similar to 'hello'."}]}

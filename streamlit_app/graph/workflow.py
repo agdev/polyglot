@@ -24,20 +24,20 @@ def create_detect_intent_node(llm)-> Callable[[PolyglotState, RunnableConfig], P
         print(f"input: {state['input']}")
         try:
             # Get intent from LLM
-            intent: Intent = detect_intent_chain.invoke({"input": state["input"]})                        
-            result = intent.Intent
+            intent = detect_intent_chain.invoke({"input": state["input"]})                        
+            
             # Validate intent
-            if intent.Intent not in ["translation", "chat"]:
+            if intent  not in ["translation", "chat"]:
                 # Default to chat if response is invalid
-                result = "chat"                                                                
+                intent = "chat"                                                                
         except Exception as e:
             # Log the error (you might want to add proper logging)
             print(f"Error in intent detection: {str(e)}")
             # Default to chat on error
-            result = "chat"
+            intent = "chat"
 
-        print(f"intent: {result}")
-        return {"intent": result}            
+        print(f"intent: {intent}")
+        return {"intent": intent}            
     return detect_intent
 
     
