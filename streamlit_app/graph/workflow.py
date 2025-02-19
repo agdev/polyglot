@@ -24,8 +24,9 @@ def create_detect_intent_node(llm)-> Callable[[PolyglotState, RunnableConfig], P
         print(f"input: {state['input']}")
         try:
             # Get intent from LLM
-            intent = detect_intent_chain.invoke({"input": state["input"]})                        
-            
+            response: Intent = detect_intent_chain.invoke({"input": state["input"]})                        
+            print(f"intent: {response}")
+            intent = response.Intent
             # Validate intent
             if intent  not in ["translation", "chat"]:
                 # Default to chat if response is invalid
@@ -104,10 +105,9 @@ def create_tts_node(tts_model:TTSModel) -> Callable[[PolyglotState, RunnableConf
     """Convert translations to speech."""
     def text_to_speech(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
         print(f"text_to_speech")
-        print(f"translation: {state['translation']}")
         if not state.get("translation"):
             return state
-            
+        print(f"translation: {state['translation']}")    
         translations = state["translation"]["options"]
         audio_files = []
         

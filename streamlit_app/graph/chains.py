@@ -28,9 +28,9 @@ def create_detect_intent_chain(llm):
     )
 
     
-    # llm_structured = llm.with_structured_output(Intent)
-    # return prompt_template | llm_structured
-    return prompt_template | llm | StrOutputParser()
+    llm_structured = llm.with_structured_output(Intent)
+    return prompt_template | llm_structured
+    # return prompt_template | llm | StrOutputParser()
     # return prompt_template | llm | JsonOutputParser(pydantic_object=Intent)
 # class ExtractedSentence(BaseModel):
 #     sentence: str = Field(description="The cleaned sentence to be translated")
@@ -117,9 +117,9 @@ def create_translate_chain(llm):
     )
    
    ##NOTE: using llm.with_structured_output with Free tier google api key does not work
-    # llm_structured = llm.with_structured_output(TranslationResponse)
-    # return prompt_template | llm_structured
-    return prompt_template | llm | StrOutputParser() | RunnableLambda(partial(parse_to_model, model=TranslationResponse))
+    llm_structured = llm.with_structured_output(TranslationResponse)
+    return prompt_template | llm_structured
+    # return prompt_template | llm | StrOutputParser() | RunnableLambda(partial(parse_to_model, model=TranslationResponse))
 # | JsonOutputParser(pydantic_object=TranslationResponse)
 
 # class WordBreakdown(BaseModel):
@@ -178,19 +178,50 @@ def create_chat_response_chain(llm):
 
 if __name__ == "__main__":
     from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_openai import ChatOpenAI
+    from langchain_google_vertexai import ChatVertexAI
+
     from dotenv import load_dotenv
     import os
     
     env_path = os.path.join( os.getcwd(), "streamlit_app", "env", ".env")
     load_dotenv(env_path)
-    api_key = os.getenv("GOOGLE_API_KEY")
-    llm = ChatGoogleGenerativeAI(
+    google_api_key = os.getenv("GOOGLE_API_KEY")
+    mistral_api_key = os.getenv("MISTRAL_API_KEY")
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    google_llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
             temperature=0.7,
-            api_key=api_key
+            api_key=google_api_key
+    )
+
+    import vertexai
+
+    print('getcwd',os.getcwd())
+    
+    PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
+    LOCATION = os.environ.get("GOOGLE_CLOUD_REGION", "us-central1")
+
+    vertexai.init(project=PROJECT_ID, location=LOCATION)
+
+    vertex_llm = ChatVertexAI(
+        model="gemini-2.0-flash",
+        temperature=0.7,
+        api_key=google_api_key
+    )
+
+    openai_llm = ChatOpenAI(
+        model="gpt-4o-2024-08-06", #"gpt-3.5-turbo-0125"
+        api_key=openai_api_key
     )
     
-    def test_translate_chain():        
+    from langchain_mistralai.chat_models import ChatMistralAI
+    mistral_llm = ChatMistralAI(
+        model="mistral-large-latest",
+        api_key=mistral_api_key
+    )
+
+    def test_translate_chain(llm):        
         translate_chain = create_translate_chain(llm)
         result = translate_chain.invoke({"user_request": "Translate 'hello' to Spanish"})
         print(f"result: {result}")
@@ -198,12 +229,13 @@ if __name__ == "__main__":
         # translation = parser.parse(result)
         # print(f"translation: {translation}")
 
-    def test_detect_intent_chain():
+    def test_detect_intent_chain(llm):
         # config = load_config()
         detect_intent_chain = create_detect_intent_chain(llm)
         result = detect_intent_chain.invoke({"input": "Translate 'hello' to Spanish"})
         print(f"result: {result}")
 
-    test_translate_chain()
-    # test_detect_intent_chain()
+    # test_translate_chain(vertex_llm)
+    test_detect_intent_chain(vertex_llm)
+    
     # {'target_language': 'Spanish', 'options': [{'translation': 'Hola', 'description': "This is the most common and general translation of 'hello'. Use it in most situations."}, {'translation': 'Aló', 'description': "This translation is used in some Latin American countries, especially when answering the phone. It's similar to saying 'hello' on the phone in English."}, {'translation': 'Qué tal', 'description': "This translates more closely to 'What's up?' or 'How's it going?', but can be used as an informal greeting similar to 'hello'."}]}

@@ -16,6 +16,10 @@ langchain = "*"
 langchain-core = "*"
 pydantic = "*"
 sox = "*"
+langchain-mistralai = "*"
+langchain-openai = "*"
+langchain-google-vertexai = "*"
+google-cloud-aiplatform = "*"
 
 [dev-packages]
 

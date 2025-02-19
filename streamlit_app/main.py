@@ -8,6 +8,7 @@ from stt_tts.models import STTModel, TTSModel
 from graph.workflow import create_workflow
 from config import load_config
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_mistralai.chat_models import ChatMistralAI
 # Load environment variables
 # load_dotenv()
 config = load_config()
@@ -31,12 +32,16 @@ if "tts" not in st.session_state:
     
 
 if "llm" not in st.session_state:
-# Initialize LLM
-    st.session_state.llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        temperature=0.7,
-        api_key=config["GOOGLE_API_KEY"]
-    )    
+# Initialize LLM  
+    st.session_state.llm = ChatMistralAI(
+        model="mistral-large-latest",
+        api_key=config["MISTRAL_API_KEY"]
+    )
+    # st.session_state.llm = ChatGoogleGenerativeAI(
+    #     model="gemini-2.0-flash",
+    #     temperature=0.7,
+    #     api_key=config["GOOGLE_API_KEY"]
+    # )    
 
 def initialize_app():
     st.set_page_config(
