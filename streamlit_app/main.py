@@ -10,10 +10,19 @@ from config import load_config
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_groq import ChatGroq
+from config import Config
+
+def has_api_key(config: Config) -> bool:
+    """
+    Check if GROQ API key is present and valid.
+    Returns True if key is valid, False otherwise.
+    """
+    return not ("GROQ_API_KEY" not in config or not config["GROQ_API_KEY"])
 
 # Load environment variables
 # load_dotenv()
 config = load_config()
+
 # print(f"config: {config}")
 def print_available_tts_models():
     from TTS.api import TTS
@@ -21,41 +30,61 @@ def print_available_tts_models():
     available_models = TTS.list_models(language="en")
     print(available_models)
 # Initialize session state
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "dictionary" not in st.session_state:
-    st.session_state.dictionary = {}
-if "stt" not in st.session_state:
-    st.session_state.stt = STTModel(config["WHISPER_MODEL"])
-if "tts" not in st.session_state:
-    # print_available_tts_models()
-    st.session_state.tts = TTSModel(config["TTS_MODEL"],  audio_backend=config["AUDIO_BACKEND"])
-    
-
-if "llm" not in st.session_state:
-# Initialize LLM  
-    st.session_state.llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
-        api_key=config["GROQ_API_KEY"]
-    )
-    # st.session_state.llm = ChatMistralAI(
-    #     model="mistral-large-latest",
-    #     api_key=config["MISTRAL_API_KEY"]
-    # )
-    # st.session_state.llm = ChatGoogleGenerativeAI(
-    #     model="gemini-2.0-flash",
-    #     temperature=0.7,
-    #     api_key=config["GOOGLE_API_KEY"]
-    # )    
+def init_llm():
+    if "llm" not in st.session_state:
+    # Initialize LLM  
+        st.session_state.llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            api_key=config["GROQ_API_KEY"]
+        )
+        # st.session_state.llm = ChatMistralAI(
+        #     model="mistral-large-latest",
+        #     api_key=config["MISTRAL_API_KEY"]
+        # )
+        # st.session_state.llm = ChatGoogleGenerativeAI(
+        #     model="gemini-2.0-flash",
+        #     temperature=0.7,
+        #     api_key=config["GOOGLE_API_KEY"]
+        # )    
 
 def initialize_app():
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "dictionary" not in st.session_state:
+        st.session_state.dictionary = {}
+    if "stt" not in st.session_state:
+        st.session_state.stt = STTModel(config["WHISPER_MODEL"])
+    if "tts" not in st.session_state:
+        # print_available_tts_models()
+        st.session_state.tts = TTSModel(config["TTS_MODEL"],  audio_backend=config["AUDIO_BACKEND"])    
+
     st.set_page_config(
         page_title="Polyglot - AI Language Learning Assistant",
         page_icon="🗣️",
         layout="wide"
     )
     st.title("🗣️ Polyglot - AI Language Learning Assistant")
+
+    if "llm" not in st.session_state and has_api_key(config) == False:
+        st.sidebar.header("API Configuration")
+        st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app 
+                            [here](https://github.com/agdev/polyglot/tree/main).
+                            """)
+        llm_api_key = st.sidebar.text_input(
+            "API Key}",
+            type="password",
+            key="llm_api_key"
+        )
+
+        if st.sidebar.button("Save API Key"):
+            if llm_api_key :
+                config["GROQ_API_KEY"] = llm_api_key            
+                st.session_state.config = config
+                st.sidebar.success("API keys saved successfully!")                
+                init_llm()
+            else:
+                st.sidebar.error("Please enter GROQ API key")                        
+        
 
 def create_sidebar():
     with st.sidebar:
@@ -158,12 +187,17 @@ def display_chat_interface():
             chat_message_user.error(f"Error transcribing audio: {str(e)}")
             chat_message_user.markdown("Failed to transcribe audio, try again")
 
+
 def main():
     initialize_app()
     create_sidebar()
     
-    # Main chat interface
-    display_chat_interface()
+    # Check for API key before displaying chat interface
+    if "llm" in st.session_state:
+        # Main chat interface
+        display_chat_interface()
+    else:
+        st.info("Please configure your GROQ API key to start chatting.")
 
 if __name__ == "__main__":
     main()
