@@ -20,6 +20,7 @@ langchain-mistralai = "*"
 langchain-openai = "*"
 langchain-google-vertexai = "*"
 google-cloud-aiplatform = "*"
+langchain-groq = "*"
 
 [dev-packages]
 

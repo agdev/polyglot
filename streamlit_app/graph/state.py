@@ -7,7 +7,7 @@ class TranslationOptions(TypedDict):
 
 class Translation(TypedDict):
     language: str
-    options: Annotated[list[TranslationOptions], add]
+    options: Annotated[list[TranslationOptions], add]   
 
 class PolyglotState(TypedDict):
     input: str
@@ -17,6 +17,6 @@ class PolyglotState(TypedDict):
     translation: Translation
     chat_resp: str
     chat_history: Annotated[list[str], add]
-    audio_response_file: Annotated[list[str], add]
+    audio_response_files: Annotated[list[str], add]
 
 # class PolyglotStateInternal(TypedDict):

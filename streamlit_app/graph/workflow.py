@@ -71,7 +71,8 @@ def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], Polyg
             print(f"response: {response}")
             translation = Translation()
             translation["language"] = response.target_language
-            for option in response.translations:
+            translation["options"] = []
+            for option in response.options:
                 translation_option = TranslationOptions()
                 translation_option["translation"] = option.translation
                 translation_option["description"] = option.description
@@ -108,15 +109,19 @@ def create_tts_node(tts_model:TTSModel) -> Callable[[PolyglotState, RunnableConf
         if not state.get("translation"):
             return state
         print(f"translation: {state['translation']}")    
-        translations = state["translation"]["options"]
-        audio_files = []
-        
-        for option in translations:
-            audio_path = tts_model.tts_to_file(option["translation"])
-            audio_files.append(audio_path)
+        try:
+            translations = state["translation"]["options"]
+            audio_files = []
+            
+            for option in translations:
+                audio_path = tts_model.tts_to_file(option["translation"])
+                audio_files.append(audio_path)
 
-        print(f"audio_files: {audio_files}")
-        return {"audio_response_files": audio_files}
+            print(f"audio_files: {audio_files}")
+            return {"audio_response_files": audio_files}
+        except Exception as e:
+            print(f"Error in text_to_speech: {str(e)}")
+            return state
     
     return text_to_speech
 

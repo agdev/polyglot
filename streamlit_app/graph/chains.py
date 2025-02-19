@@ -22,8 +22,13 @@ def create_detect_intent_chain(llm):
         - "What's the weather like?" -> 'chat'
         - "Can you help me learn Spanish?" -> 'chat'
 
+         Respond in JSON format.
+        Example response:
+        {json_format}
+
         User: {input}    
-        """
+        """,
+        partial_variables={"json_format": JsonOutputParser(pydantic_object=Intent).get_format_instructions()}
         # output_parser=JsonOutputParser()
     )
 
@@ -32,6 +37,7 @@ def create_detect_intent_chain(llm):
     return prompt_template | llm_structured
     # return prompt_template | llm | StrOutputParser()
     # return prompt_template | llm | JsonOutputParser(pydantic_object=Intent)
+
 # class ExtractedSentence(BaseModel):
 #     sentence: str = Field(description="The cleaned sentence to be translated")
 #     source_language: str = Field(description="Detected source language")
@@ -119,7 +125,8 @@ def create_translate_chain(llm):
    ##NOTE: using llm.with_structured_output with Free tier google api key does not work
     llm_structured = llm.with_structured_output(TranslationResponse)
     return prompt_template | llm_structured
-    # return prompt_template | llm | StrOutputParser() | RunnableLambda(partial(parse_to_model, model=TranslationResponse))
+    # return prompt_template | llm | StrOutputParser()
+    # | RunnableLambda(partial(parse_to_model, model=TranslationResponse))
 # | JsonOutputParser(pydantic_object=TranslationResponse)
 
 # class WordBreakdown(BaseModel):
@@ -180,6 +187,7 @@ if __name__ == "__main__":
     from langchain_google_genai import ChatGoogleGenerativeAI
     from langchain_openai import ChatOpenAI
     from langchain_google_vertexai import ChatVertexAI
+    from langchain_groq import ChatGroq
 
     from dotenv import load_dotenv
     import os
@@ -195,20 +203,25 @@ if __name__ == "__main__":
             api_key=google_api_key
     )
 
-    import vertexai
-
-    print('getcwd',os.getcwd())
-    
-    PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    LOCATION = os.environ.get("GOOGLE_CLOUD_REGION", "us-central1")
-
-    vertexai.init(project=PROJECT_ID, location=LOCATION)
-
-    vertex_llm = ChatVertexAI(
-        model="gemini-2.0-flash",
-        temperature=0.7,
-        api_key=google_api_key
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    groq_llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=groq_api_key
     )
+    # import vertexai
+
+    # print('getcwd',os.getcwd())
+    
+    # PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
+    # LOCATION = os.environ.get("GOOGLE_CLOUD_REGION", "us-central1")
+
+    # vertexai.init(project=PROJECT_ID, location=LOCATION)
+
+    # vertex_llm = ChatVertexAI(
+    #     model="gemini-2.0-flash",
+    #     temperature=0.7,
+    #     api_key=google_api_key
+    # )
 
     openai_llm = ChatOpenAI(
         model="gpt-4o-2024-08-06", #"gpt-3.5-turbo-0125"
@@ -235,7 +248,7 @@ if __name__ == "__main__":
         result = detect_intent_chain.invoke({"input": "Translate 'hello' to Spanish"})
         print(f"result: {result}")
 
-    # test_translate_chain(vertex_llm)
-    test_detect_intent_chain(vertex_llm)
+    # test_translate_chain(groq_llm)
+    test_detect_intent_chain(groq_llm)
     
     # {'target_language': 'Spanish', 'options': [{'translation': 'Hola', 'description': "This is the most common and general translation of 'hello'. Use it in most situations."}, {'translation': 'Aló', 'description': "This translation is used in some Latin American countries, especially when answering the phone. It's similar to saying 'hello' on the phone in English."}, {'translation': 'Qué tal', 'description': "This translates more closely to 'What's up?' or 'How's it going?', but can be used as an informal greeting similar to 'hello'."}]}

@@ -9,6 +9,8 @@ from graph.workflow import create_workflow
 from config import load_config
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mistralai.chat_models import ChatMistralAI
+from langchain_groq import ChatGroq
+
 # Load environment variables
 # load_dotenv()
 config = load_config()
@@ -33,10 +35,14 @@ if "tts" not in st.session_state:
 
 if "llm" not in st.session_state:
 # Initialize LLM  
-    st.session_state.llm = ChatMistralAI(
-        model="mistral-large-latest",
-        api_key=config["MISTRAL_API_KEY"]
+    st.session_state.llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=config["GROQ_API_KEY"]
     )
+    # st.session_state.llm = ChatMistralAI(
+    #     model="mistral-large-latest",
+    #     api_key=config["MISTRAL_API_KEY"]
+    # )
     # st.session_state.llm = ChatGoogleGenerativeAI(
     #     model="gemini-2.0-flash",
     #     temperature=0.7,
@@ -81,6 +87,9 @@ def display_translation_options(translation_options, audio_files):
             st.audio(audio_files[idx])
         else:
             st.markdown("An error occurred while processing your message. Please try again.")
+    
+    for audio_file in audio_files:
+        os.remove(audio_file)
 
 def process_chat_message(input_text: str, is_audio: bool = False) -> None:
     """
@@ -106,7 +115,7 @@ def process_chat_message(input_text: str, is_audio: bool = False) -> None:
     
     # Display assistant response
     with st.chat_message("assistant"):
-        if (result["chat_resp"] is not None):
+        if "chat_resp" in result and result["chat_resp"] is not None:
             st.markdown(result["chat_resp"])
             st.session_state.messages.append({"role": "assistant", "content": result["chat_resp"]})
         elif (result["translation"] is not None):

@@ -13,6 +13,11 @@ class Config(TypedDict):
 
 def load_config() -> Config:        
     env_path = os.path.join( os.getcwd(), "env", ".env")
+    if not os.path.exists(env_path):
+        env_path = os.path.join( os.getcwd(),'streamlit_app', "env", ".env")
+        if not os.path.exists(env_path):
+           raise FileNotFoundError(f"Environment file not found at: {env_path}")
+
     print(f"env_path: {env_path}")
     load_dotenv(env_path)
     
@@ -21,6 +26,7 @@ def load_config() -> Config:
         "TTS_MODEL": os.getenv("TTS_MODEL","tts_models/en/jenny/jenny"),
         "GOOGLE_API_KEY": os.getenv("GOOGLE_API_KEY", ""),
         "MISTRAL_API_KEY": os.getenv("MISTRAL_API_KEY", ""),
+        "GROQ_API_KEY": os.getenv("GROQ_API_KEY", ""),
         "AUDIO_BACKEND": os.getenv("AUDIO_BACKEND","sox_io"),
         "DEVICE": "cpu"
     } 
