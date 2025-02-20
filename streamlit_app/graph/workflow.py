@@ -1,5 +1,6 @@
-from typing import Annotated, Dict, Any, Callable
+from typing import Annotated, Dict, Any, Callable, Literal, Union
 from langgraph.graph import StateGraph, END
+from langgraph.types import Command
 # from dotenv import load_dotenv
 import os
 from .state import PolyglotState, Translation, TranslationOptions
@@ -79,8 +80,12 @@ def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], Polyg
                 translation["options"].append(translation_option)
             return {"translation": translation}
         except Exception as e:
-            print(f"Error in translate_text: {str(e)}")
-            return state
+            error_message = f"Error in translate_text: {str(e)}"
+            print(error_message)
+            return Command(
+                update={"error": error_message},
+                goto=END,  # where `other_subgraph` is a node in the parent graph                
+            )
     
     return translate_text
 
@@ -104,7 +109,7 @@ def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], Polyg
 
 def create_tts_node(tts_model:TTSModel) -> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
     """Convert translations to speech."""
-    def text_to_speech(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
+    def text_to_speech(state: PolyglotState, config: RunnableConfig) -> Union[PolyglotState, Command[Literal[END]]]:
         print(f"text_to_speech")
         if not state.get("translation"):
             return state
@@ -120,10 +125,15 @@ def create_tts_node(tts_model:TTSModel) -> Callable[[PolyglotState, RunnableConf
             print(f"audio_files: {audio_files}")
             return {"audio_response_files": audio_files}
         except Exception as e:
-            print(f"Error in text_to_speech: {str(e)}")
-            return state
+            error_message = f"Error in text_to_speech: {str(e)}"
+            print(error_message)
+            return Command(
+                update={"error": error_message},
+                goto=END,  # where `other_subgraph` is a node in the parent graph                
+            )
     
     return text_to_speech
+
 
 def create_chat_response_node(llm)-> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
     chat_response_chain = create_chat_response_chain(llm)
@@ -161,6 +171,8 @@ def create_workflow(llm, tts_model:TTSModel) -> StateGraph:
     # workflow.add_node("break_down_sentence", breakdown_node)
     workflow.add_node("text_to_speech", tts_node)
     
+    
+
     # Define edges based on flow chart
     workflow.add_conditional_edges(
         "detect_intent",

@@ -18,5 +18,6 @@ class PolyglotState(TypedDict):
     chat_resp: str
     chat_history: Annotated[list[str], add]
     audio_response_files: Annotated[list[str], add]
+    error: Optional[str]
 
 # class PolyglotStateInternal(TypedDict):

@@ -1,16 +1,18 @@
 import streamlit as st
-from pathlib import Path
-import json
+# from pathlib import Path
+# import json
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 # from streamlit_app.graph import workflow
 from stt_tts.models import STTModel, TTSModel
 from graph.workflow import create_workflow
 from config import load_config
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_mistralai.chat_models import ChatMistralAI
+# from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_groq import ChatGroq
 from config import Config
+from streamlit_chat_widget import chat_input_widget
+# from streamlit_extras.bottom_container import bottom
 
 def has_api_key(config: Config) -> bool:
     """
@@ -48,6 +50,62 @@ def init_llm():
         # )    
 
 def initialize_app():
+    # Must be the first Streamlit command
+    st.set_page_config(
+        page_title="Polyglot - AI Language Learning Assistant",
+        page_icon="🗣️",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+
+    # Custom CSS to remove spacing while keeping title visible
+    # st.markdown("""
+    #     <style>
+    #         /* Reduce top padding of main container */
+    #         .block-container {
+    #             padding-top: 2rem !important;
+    #         }
+            
+    #         /* Adjust title spacing */
+    #         .stTitle {
+    #             margin-bottom: 0 !important;
+    #             padding-bottom: 0 !important;
+    #         }
+            
+    #         /* Target chat widget container */
+    #         .element-container {
+    #             margin: 0 !important;
+    #             padding: 0 !important;
+    #         }
+            
+    #         /* Target the custom chat widget */
+    #         .stChatInputContainer, 
+    #         div[data-testid="stChatInput"],
+    #         .stChatInput,
+    #         iframe[title="chat_input_widget"] {
+    #             margin: 0 !important;
+    #             padding: 0 !important;
+    #         }
+            
+    #         /* Hide unnecessary UI elements */
+    #         [data-testid="stToolbar"] {
+    #             display: none;
+    #         }
+    #         [data-testid="stDecoration"] {
+    #             display: none;
+    #         }
+            
+    #         /* Remove all gaps */
+    #         section.main > div,
+    #         .stChatMessage,
+    #         .element-container > * {
+    #             margin: 0 !important;
+    #             padding: 0 !important;
+    #             gap: 0 !important;
+    #         }
+    #     </style>
+    # """, unsafe_allow_html=True)
+
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "dictionary" not in st.session_state:
@@ -58,32 +116,31 @@ def initialize_app():
         # print_available_tts_models()
         st.session_state.tts = TTSModel(config["TTS_MODEL"],  audio_backend=config["AUDIO_BACKEND"])    
 
-    st.set_page_config(
-        page_title="Polyglot - AI Language Learning Assistant",
-        page_icon="🗣️",
-        layout="wide"
-    )
     st.title("🗣️ Polyglot - AI Language Learning Assistant")
 
-    if "llm" not in st.session_state and has_api_key(config) == False:
-        st.sidebar.header("API Configuration")
-        st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app 
-                            [here](https://github.com/agdev/polyglot/tree/main).
-                            """)
-        llm_api_key = st.sidebar.text_input(
-            "API Key}",
-            type="password",
-            key="llm_api_key"
-        )
+    if "llm" not in st.session_state:
+        if has_api_key(config) == False:
+            st.sidebar.header("API Configuration")
+            st.sidebar.markdown("""### API keys are stored only in session state of this Streamlit app. \n You can see the code of this app 
+                                [here](https://github.com/agdev/polyglot/tree/main).  
+                                You can obtain free API keys from [Groq](https://groq.com/api-key).
+                                """)
+            llm_api_key = st.sidebar.text_input(
+                "API Key}",
+                type="password",
+                key="llm_api_key"
+            )
 
-        if st.sidebar.button("Save API Key"):
-            if llm_api_key :
-                config["GROQ_API_KEY"] = llm_api_key            
-                st.session_state.config = config
-                st.sidebar.success("API keys saved successfully!")                
-                init_llm()
-            else:
-                st.sidebar.error("Please enter GROQ API key")                        
+            if st.sidebar.button("Save API Key"):
+                if llm_api_key :
+                    config["GROQ_API_KEY"] = llm_api_key            
+                    st.session_state.config = config
+                    st.sidebar.success("API keys saved successfully!")                
+                    init_llm()
+                else:
+                    st.sidebar.error("Please enter GROQ API key")    
+        else:
+            init_llm()                    
         
 
 def create_sidebar():
@@ -144,7 +201,10 @@ def process_chat_message(input_text: str, is_audio: bool = False) -> None:
     
     # Display assistant response
     with st.chat_message("assistant"):
-        if "chat_resp" in result and result["chat_resp"] is not None:
+        if "error" in result and result["error"] is not None:
+            st.markdown("An Error occurred while processing your message. Please try again.")
+            st.markdown(result["error"])
+        elif "chat_resp" in result and result["chat_resp"] is not None:
             st.markdown(result["chat_resp"])
             st.session_state.messages.append({"role": "assistant", "content": result["chat_resp"]})
         elif (result["translation"] is not None):
@@ -154,38 +214,46 @@ def process_chat_message(input_text: str, is_audio: bool = False) -> None:
 
 
 def display_chat_interface():
+    
     # Display chat messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Create columns for text and audio input
-    col1, col2 = st.columns([4, 1])
+    # # Create columns for text and audio input
+    # col1, col2 = st.columns([4, 1])
     
-    with col1:
-        prompt = st.chat_input("Type your message here...")
+    # with col1:
+    #     prompt = st.chat_input("Type your message here...")
     
-    with col2:
-        audio = st.audio_input("🎤")
-    
-    # Process text input
-    if prompt:
-        process_chat_message(prompt)
-    elif audio: # Process audio input
-        chat_message_user= st.chat_message("user")
-        chat_message_user.markdown("🎤 *Audio message*")
-        chat_message_user.audio(audio)
-        chat_message_user.markdown("Transcribing audio...")
-        try:
-            transcription = st.session_state.stt.transcribe(audio)
-            print(f"transcription: {transcription}")
-            if transcription and transcription["text"] and len(transcription["text"]) > 0:                    
-                process_chat_message(transcription["text"], is_audio=True)
-            else:
-                chat_message_user.markdown("Transcribing resulted in an empty text, try again")
-        except Exception as e:
-            chat_message_user.error(f"Error transcribing audio: {str(e)}")
-            chat_message_user.markdown("Failed to transcribe audio, try again")
+    # with col2:
+    #     audio = st.audio_input("🎤")
+    # with bottom():
+    user_input = chat_input_widget()
+    # with st.chat_message("user"):
+        
+
+    if user_input:                    
+        # Process text input
+        if "text" in user_input:
+            process_chat_message(user_input['text'])
+        elif "audioFile" in user_input: # Process audio input
+            chat_message_user= st.chat_message("user")
+            chat_message_user.markdown("🎤 *Audio message*")
+            audio =bytes(user_input["audioFile"])        
+            chat_message_user.audio(audio)
+            with st.spinner("Transcribing audio..."):
+            # chat_message_user.markdown("Transcribing audio...")
+                try:
+                    transcription = st.session_state.stt.transcribe(audio)
+                    print(f"transcription: {transcription}")
+                    if transcription and transcription["text"] and len(transcription["text"]) > 0:                    
+                        process_chat_message(transcription["text"], is_audio=True)
+                    else:
+                        chat_message_user.markdown("Transcribing resulted in an empty text, try again")
+                except Exception as e:
+                    chat_message_user.error(f"Error transcribing audio: {str(e)}")
+                    chat_message_user.markdown("Failed to transcribe audio, try again")
 
 
 def main():

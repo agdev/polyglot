@@ -21,6 +21,8 @@ langchain-openai = "*"
 langchain-google-vertexai = "*"
 google-cloud-aiplatform = "*"
 langchain-groq = "*"
+streamlit-chat-widget = "*"
+streamlit-extras = "*"
 
 [dev-packages]
 

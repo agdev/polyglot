@@ -13,7 +13,7 @@ class STTModel:
     def __init__(self,  model_name: str = 'small', device = 'cpu') -> None:
         self.model = whisper.load_model(model_name, device=device)
     
-    def transcribe(self, audio_file: BytesIO) -> Optional[Dict[str, Any]]:
+    def transcribe(self, audio: bytes) -> Optional[Dict[str, Any]]:
         """
         Transcribe audio file to text using Whisper model.
         
@@ -24,7 +24,7 @@ class STTModel:
             Dict containing transcription result or None if error occurs
         """
         with tempfile.NamedTemporaryFile(delete=False) as temp_audio:
-            temp_audio.write(audio_file.read())
+            temp_audio.write(audio)
         # Get the absolute path of the temporary audio file
         audio_file_path = os.path.abspath(temp_audio.name)
         print(f"Transcribing audio from: {audio_file_path}")
