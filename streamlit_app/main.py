@@ -58,54 +58,6 @@ def initialize_app():
         initial_sidebar_state="expanded"
     )
 
-    # Custom CSS to remove spacing while keeping title visible
-    # st.markdown("""
-    #     <style>
-    #         /* Reduce top padding of main container */
-    #         .block-container {
-    #             padding-top: 2rem !important;
-    #         }
-            
-    #         /* Adjust title spacing */
-    #         .stTitle {
-    #             margin-bottom: 0 !important;
-    #             padding-bottom: 0 !important;
-    #         }
-            
-    #         /* Target chat widget container */
-    #         .element-container {
-    #             margin: 0 !important;
-    #             padding: 0 !important;
-    #         }
-            
-    #         /* Target the custom chat widget */
-    #         .stChatInputContainer, 
-    #         div[data-testid="stChatInput"],
-    #         .stChatInput,
-    #         iframe[title="chat_input_widget"] {
-    #             margin: 0 !important;
-    #             padding: 0 !important;
-    #         }
-            
-    #         /* Hide unnecessary UI elements */
-    #         [data-testid="stToolbar"] {
-    #             display: none;
-    #         }
-    #         [data-testid="stDecoration"] {
-    #             display: none;
-    #         }
-            
-    #         /* Remove all gaps */
-    #         section.main > div,
-    #         .stChatMessage,
-    #         .element-container > * {
-    #             margin: 0 !important;
-    #             padding: 0 !important;
-    #             gap: 0 !important;
-    #         }
-    #     </style>
-    # """, unsafe_allow_html=True)
-
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "dictionary" not in st.session_state:
@@ -160,22 +112,18 @@ def create_sidebar():
             # TODO: Implement download functionality
             st.text_input("Enter your email:", key="download_email")
 
-def display_translation_options(translation_options, audio_files):
+def display_translation_options(translation_options):
     for idx, option in enumerate(translation_options):
         translation_text = option['translation']
+        audio_file_path = option['audio_file_path']
         context_text = option['description'] 
         translation_number = idx + 1
         translation_message = f"**Translation {translation_number}:** {translation_text}\n*Context:* {context_text}"
-        st.session_state.messages.append({"role": "assistant", "content": translation_message})
+        st.session_state.messages.append({"role": "assistant", "content": translation_message, "audio_file_path": audio_file_path})
         st.markdown(f"**Translation {translation_number}:** {translation_text}")
-        st.markdown(f"*Context:* {context_text}")
-        if audio_files and idx < len(audio_files):
-            st.audio(audio_files[idx])
-        else:
-            st.markdown("An error occurred while processing your message. Please try again.")
-    
-    for audio_file in audio_files:
-        os.remove(audio_file)
+        st.markdown(f"*Context:* {context_text}")        
+        st.audio(audio_file_path)
+        # os.remove(audio_file_path)
 
 def process_chat_message(input_text: str, is_audio: bool = False) -> None:
     """
@@ -209,7 +157,8 @@ def process_chat_message(input_text: str, is_audio: bool = False) -> None:
             st.session_state.messages.append({"role": "assistant", "content": result["chat_resp"]})
         elif (result["translation"] is not None):
             # Display each translation option with its audio
-            display_translation_options(result["translation"]["options"], result.get("audio_response_files", []))
+            # display_translation_options(result["translation"]["options"], result.get("audio_response_files", []))
+            display_translation_options(result["translation"]["options"])
 
 
 

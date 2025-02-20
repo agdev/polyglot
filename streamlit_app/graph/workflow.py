@@ -3,7 +3,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.types import Command
 # from dotenv import load_dotenv
 import os
-from .state import PolyglotState, Translation, TranslationOptions
+from .state import PolyglotState, Translation, TranslationOptions, Word
 from langchain_core.runnables.config import RunnableConfig
 from .configSchema import ConfigSchema
 from .chains import create_detect_intent_chain, Intent, create_translate_chain, TranslationResponse, create_chat_response_chain
@@ -77,6 +77,10 @@ def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], Polyg
                 translation_option = TranslationOptions()
                 translation_option["translation"] = option.translation
                 translation_option["description"] = option.description
+                words = []
+                for word in option.words:
+                    words.append(Word(translated_word=word.translated_word, original_word=word.original_word))
+                translation_option["words"] = words
                 translation["options"].append(translation_option)
             return {"translation": translation}
         except Exception as e:
@@ -116,14 +120,16 @@ def create_tts_node(tts_model:TTSModel) -> Callable[[PolyglotState, RunnableConf
         print(f"translation: {state['translation']}")    
         try:
             translations = state["translation"]["options"]
-            audio_files = []
+            # audio_files = []
             
             for option in translations:
                 audio_path = tts_model.tts_to_file(option["translation"])
-                audio_files.append(audio_path)
+                option["audio_file_path"] = audio_path
+                # audio_files.append(audio_path)
 
-            print(f"audio_files: {audio_files}")
-            return {"audio_response_files": audio_files}
+            # print(f"audio_files: {audio_files}")
+            # return {"audio_response_files": audio_files}
+            return {"translation": state["translation"]}    
         except Exception as e:
             error_message = f"Error in text_to_speech: {str(e)}"
             print(error_message)

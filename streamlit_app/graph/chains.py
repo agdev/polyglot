@@ -69,9 +69,14 @@ def create_detect_intent_chain(llm):
 #     llm_structured = llm.with_structured_output(ExtractedSentence)
 #     return prompt | llm_structured
 
+class Word(BaseModel):
+    translated_word: str = Field(description="The word")
+    original_word: str = Field(description="The original word")
+
 class TranslationOption(BaseModel):
     translation: str = Field(description="The translated text")
     description: str = Field(description="Description of this translation variant")
+    words: List[Word] = Field(description="Break down the translation into words with matching original words")
     # formality_level: str = Field(description="Formality level (formal, informal, neutral)")
 
 class TranslationResponse(BaseModel):
@@ -114,6 +119,7 @@ def create_translate_chain(llm):
           - For each translation, provide:
             1. The translated text
             2. A description of when to use this variant
+            3. break down the translation into words with matching original words
             
         Respond in JSON format.
         Example response:
@@ -248,7 +254,7 @@ if __name__ == "__main__":
         result = detect_intent_chain.invoke({"input": "Translate 'hello' to Spanish"})
         print(f"result: {result}")
 
-    # test_translate_chain(groq_llm)
-    test_detect_intent_chain(groq_llm)
+    test_translate_chain(groq_llm)
+    # test_detect_intent_chain(groq_llm)
     
     # {'target_language': 'Spanish', 'options': [{'translation': 'Hola', 'description': "This is the most common and general translation of 'hello'. Use it in most situations."}, {'translation': 'Aló', 'description': "This translation is used in some Latin American countries, especially when answering the phone. It's similar to saying 'hello' on the phone in English."}, {'translation': 'Qué tal', 'description': "This translates more closely to 'What's up?' or 'How's it going?', but can be used as an informal greeting similar to 'hello'."}]}
