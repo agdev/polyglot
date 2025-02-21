@@ -8,16 +8,7 @@ from langchain_core.runnables.config import RunnableConfig
 # from .configSchema import ConfigSchema
 from .chains import create_detect_intent_chain, Intent, create_translate_chain, TranslationResponse, create_chat_response_chain
 from stt_tts.models import TTSModel
-# Load environment variables
-# load_dotenv()
 
- # Define nodes (placeholder implementations)
-    
-# def transcribe(state: State) -> State:
-#     # TODO: Implement Whisper transcription
-#     if state["input_type"] == "audio":
-#         state["transcription"] = state["input"]  # Placeholder
-#     return state
 def create_detect_intent_node(llm)-> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
     detect_intent_chain = create_detect_intent_chain(llm)    
     def detect_intent(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
@@ -41,25 +32,6 @@ def create_detect_intent_node(llm)-> Callable[[PolyglotState, RunnableConfig], P
         print(f"intent: {intent}")
         return {"intent": intent}            
     return detect_intent
-
-    
-
-# def create_extract_sentence(llm):
-#     def extract_sentence_for_translation(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
-#         """Extract sentences for translation using LLM."""
-#         text = state["transcription"] if state["input_type"] == "audio" else state["input"]
-        
-#         messages = [
-#             ("system", """Extract the sentence to be translated. Remove any extra context like 'translate this:' 
-#             or 'how do you say'. Just return the core sentence to translate."""),
-#             ("human", text)
-#         ]
-        
-#         response = llm.invoke(messages)
-#         state["sentence_to_translate"] = response.content.strip()
-#         return state
-    
-#     return extract_sentence_for_translation
 
 def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
     translate_chain = create_translate_chain(llm)
@@ -93,24 +65,6 @@ def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], Polyg
             )
     
     return translate_text
-
-# def create_sentence_breakdown(llm):
-#     def break_down_sentence(state: PolyglotState, config: RunnableConfig) -> PolyglotState:
-#         """Break down translated sentence into words and store in state."""
-#         if not state.get("translation"):
-#             return state
-            
-#         messages = [
-#             ("system", """Break down this translation into individual words and provide explanations.
-#             Format as a list of word objects with 'word' and 'explanation' fields."""),
-#             ("human", state["translation"]["options"][0]["translation"])
-#         ]
-        
-#         response = llm.invoke(messages)
-#         state["word_breakdown"] = response.content  # You'll want to parse this properly
-#         return state
-    
-#     return break_down_sentence
 
 def create_tts_node(tts_model:TTSModel) -> Callable[[PolyglotState, RunnableConfig], PolyglotState]:
     """Convert translations to speech."""
