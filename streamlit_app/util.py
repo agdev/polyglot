@@ -4,6 +4,13 @@ from streamlit_dynamic_filters import DynamicFilters
 
 # Function to create and display filtered dataframe
 def display_filtered_dataframe(df: pd.DataFrame, title: str, filters: list[str]):
+    """
+    Display a filtered dataframe with dynamic filters.
+    Args:
+        df: The dataframe to display.
+        title: The title of the dataframe.
+        filters: The filters to apply to the dataframe.
+    """
     # Initialize DynamicFilters
     dynamic_filters = DynamicFilters(df, filters=filters)
 
