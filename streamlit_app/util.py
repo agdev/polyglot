@@ -26,3 +26,28 @@ def display_filtered_dataframe(df: pd.DataFrame, title: str, filters: list[str])
     # Display the filtered DataFrame
     st.subheader(title)
     st.dataframe(filtered_df)
+
+    # Add a download button
+    st.download_button(
+        label="Download CSV",
+        data=filtered_df.to_csv(index=False),
+        file_name=f"{title}.csv",
+        mime="text/csv"
+    )
+    # st.markdown("---")
+    # if st.button("Download Phrases"):
+    #         # Get the current filtered dataframe
+    #         filtered_df = st.session_state.translation_df
+            
+    #         # Convert dataframe to CSV
+    #         csv = filtered_df.to_csv(index=False)
+            
+    #         # Create download button
+    #         st.download_button(
+    #             label="Download CSV",
+    #             data=csv,
+    #             file_name="translations.csv",
+    #             mime="text/csv"
+    #         )
+    #         # TODO: Implement download functionality
+    #         st.text_input("Enter your email:", key="download_email")
