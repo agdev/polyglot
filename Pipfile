@@ -23,6 +23,7 @@ google-cloud-aiplatform = "*"
 langchain-groq = "*"
 streamlit-chat-widget = "*"
 streamlit-extras = "*"
+streamlit-dynamic-filters = "*"
 
 [dev-packages]
 

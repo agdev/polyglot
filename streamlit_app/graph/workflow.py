@@ -5,7 +5,7 @@ from langgraph.types import Command
 import os
 from .state import PolyglotState, Translation, TranslationOptions, Word
 from langchain_core.runnables.config import RunnableConfig
-from .configSchema import ConfigSchema
+# from .configSchema import ConfigSchema
 from .chains import create_detect_intent_chain, Intent, create_translate_chain, TranslationResponse, create_chat_response_chain
 from stt_tts.models import TTSModel
 # Load environment variables
@@ -71,7 +71,8 @@ def create_translate_node(llm)-> Callable[[PolyglotState, RunnableConfig], Polyg
             response:TranslationResponse = translate_chain.invoke({"user_request": state["input"]})
             print(f"response: {response}")
             translation = Translation()
-            translation["language"] = response.target_language
+            translation["target_language"] = response.target_language
+            translation["source_language"] = response.source_language
             translation["options"] = []
             for option in response.options:
                 translation_option = TranslationOptions()

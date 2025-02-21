@@ -2,7 +2,7 @@ from typing import Literal, TypedDict, Annotated, Optional
 from operator import add
 from pydantic import BaseModel
 
-class Word(BaseModel):
+class Word(TypedDict):
     translated_word: str
     original_word: str
 
@@ -13,7 +13,8 @@ class TranslationOptions(TypedDict):
     words: Annotated[list[Word], add]
     
 class Translation(TypedDict):
-    language: str
+    target_language: str
+    source_language: str
     options: Annotated[list[TranslationOptions], add]   
 
 class PolyglotState(TypedDict):

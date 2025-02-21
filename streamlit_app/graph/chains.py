@@ -82,6 +82,7 @@ class TranslationOption(BaseModel):
 class TranslationResponse(BaseModel):
     # source_text: str = Field(description="Original text")
     target_language: str = Field(description="Target language")
+    source_language: str = Field(description="Source language")
     options: List[TranslationOption] = Field(description="List of translation options")
 
 # def parse_translation_response(result) -> TranslationResponse:
@@ -116,6 +117,7 @@ def create_translate_chain(llm):
         <user_request> {user_request} </user_request> 
         In your response, provide:
           - the target language.
+          - the source language.
           - For each translation, provide:
             1. The translated text
             2. A description of when to use this variant
