@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
     def test_translate_chain(llm):        
         translate_chain = create_translate_chain(llm)
-        result = translate_chain.invoke({"user_request": "Translate 'hello' to Spanish"})
+        result = translate_chain.invoke({"user_request": "Translate 'how to get to train station' to Spanish"})
         print(f"result: {result}")
         # parser = JsonOutputParser(pydantic_object=TranslationResponse)
         # translation = parser.parse(result)

@@ -27,22 +27,14 @@ pip install -r requirements.txt
 2. Set up environment variables:
 Create a `.env` file with the following:
 ```
-GOOGLE_API_KEY=your_google_api_key
+GROQ_API_KEY = your_groq_api_key
+
 ```
+if not .env file is provided user will be prompted to enter their API key.
 
 3. Run the application:
 ```bash
 streamlit run streamlit_app/main.py
-```
-
-## Project Structure
-
-```
-streamlit_app/
-├── graph/         # LangGraph implementation
-├── state/         # Application state management
-├── components/    # Streamlit components
-└── utils/         # Utility functions
 ```
 
 ## Contributing
