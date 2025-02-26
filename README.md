@@ -37,6 +37,17 @@ if not .env file is provided user will be prompted to enter their API key.
 streamlit run streamlit_app/main.py
 ```
 
+4. for Hugging Face
+---
+title: Polyglot
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: streamlit
+app_file: streamlit_app/main.py
+---
+
+
 ## Contributing
 
 Feel free to submit issues and enhancement requests!
