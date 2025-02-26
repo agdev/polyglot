@@ -24,7 +24,7 @@ An AI-powered language learning assistant that helps users learn foreign languag
 - Frontend: Streamlit
 - Backend: LangGraph, LangChain
 - Speech Processing: Whisper (STT), Coqui (TTS)
-- LLM: Google Gemini via LangChain
+- LLM: llama-3.3-70b-versatile on Groq via LangChain
 
 ## Setup
 
