@@ -1,3 +1,12 @@
+---
+title: Polyglot
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: streamlit
+app_file: streamlit_app/main.py
+---
+
 # Polyglot - AI Language Learning Assistant
 
 An AI-powered language learning assistant that helps users learn foreign languages through interactive chat. The application supports both text and voice interactions, leveraging state-of-the-art AI models for transcription, translation, and speech synthesis.
@@ -36,17 +45,6 @@ if not .env file is provided user will be prompted to enter their API key.
 ```bash
 streamlit run streamlit_app/main.py
 ```
-
-4. for Hugging Face
----
-title: Polyglot
-emoji: 🚀
-colorFrom: blue
-colorTo: green
-sdk: streamlit
-app_file: streamlit_app/main.py
----
-
 
 ## Contributing
 
