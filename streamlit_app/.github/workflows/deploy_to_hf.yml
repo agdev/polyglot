@@ -1,0 +1,39 @@
+name: Manual Deploy to Hugging Face Spaces
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_message:
+        description: 'Pushing production version'
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install Git LFS
+        run: |
+          sudo apt-get install git-lfs
+          git lfs install
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_POYGLOT }}
+        run: |
+          git push https://AIEnthusiast369:${{ secrets.HF_POYGLOT }}@huggingface.co/spaces/AIEnthusiast369/Polyglot main
+
+      - name: Post Deployment Message
+        if: ${{ github.event.inputs.deploy_message }}
+        run: |
+          echo "Deployment Message: ${{ github.event.inputs.deploy_message }}"
