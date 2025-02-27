@@ -16,7 +16,7 @@ def load_config() -> Config:
     if not os.path.exists(env_path):
         env_path = os.path.join( os.getcwd(),'streamlit_app', "env", ".env")
         if not os.path.exists(env_path):
-           raise FileNotFoundError(f"Environment file not found at: {env_path}")
+           print(f"Error: Environment file not found at: {env_path}")
 
     print(f"env_path: {env_path}")
     load_dotenv(env_path)
