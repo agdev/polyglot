@@ -23,7 +23,7 @@ def load_config() -> Config:
         env_found = os.path.exists(env_path)
         
     # Load the .env file if it exists, otherwise show error
-    if env_found:
+    if env_found == True:
         print(f"env_path: {env_path}")
         load_dotenv(env_path)
     else:
