@@ -13,14 +13,22 @@ class Config(TypedDict):
 
 def load_config() -> Config:        
     env_path = os.path.join( os.getcwd(), "env", ".env")
-    if not os.path.exists(env_path):
-        env_path = os.path.join( os.getcwd(),'streamlit_app', "env", ".env")
-        if not os.path.exists(env_path):
-           print(f"Error: Environment file not found at: {env_path}")
-
-    print(f"env_path: {env_path}")
-    load_dotenv(env_path)
-    
+    env_found = False
+    # Try the original path first
+    if os.path.exists(env_path):
+       env_found = True
+    else:
+        # Try alternative path if original doesn't exist
+        env_path = os.path.join(os.getcwd(), 'streamlit_app', 'env', '.env')
+        env_found = os.path.exists(env_path)
+        
+    # Load the .env file if it exists, otherwise show error
+    if env_found:
+        print(f"env_path: {env_path}")
+        load_dotenv(env_path)
+    else:
+        print(f"Error: Environment file not found at: {env_path}")
+        
     return {
         "WHISPER_MODEL": os.getenv("WHISPER_MODEL","small"),
         "TTS_MODEL": os.getenv("TTS_MODEL","tts_models/en/jenny/jenny"),
