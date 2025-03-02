@@ -27,7 +27,7 @@ def load_config() -> Config:
         print(f"env_path: {env_path}")
         load_dotenv(env_path)
     else:
-        print(f"Error: Environment file not found at: {env_path}")
+        print(f"Warning: Environment file not found at: {env_path}")
         
     return {
         "WHISPER_MODEL": os.getenv("WHISPER_MODEL","small"),
